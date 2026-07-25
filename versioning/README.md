@@ -7,8 +7,8 @@ The system automates version updates and tagging to ensure consistent, conflict-
 
 ### Examples
 
-- `2024.1.1` – First release of January 2024.
-- `2024.12.2` – Second release of December 2024.
+- `2027.7.1` – First release of July 2026.
+- `2027.8.2` – Second release of August 2026.
 
 ## How It Works
 
