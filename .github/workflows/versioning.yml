@@ -8,7 +8,7 @@
 # 5. Updates the bug report template with current version placeholders
 # 6. Updates the blueprint version and display name
 # 7. Commits all version changes and pushes to main
-# 8. Builds pre-built firmware binaries in parallel (nspanel-easier, wall-display)
+# 8. Builds pre-built firmware binaries in parallel (nspanel-ha, wall-display)
 # 9. Commits the compiled binaries, checksums, and manifests to main
 # 10. Creates a version tag and GitHub Release
 # 11. Updates the stable and latest floating tags

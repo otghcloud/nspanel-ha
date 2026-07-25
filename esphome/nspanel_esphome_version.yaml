@@ -6,13 +6,28 @@
 #####################################################################################################
 ---
 substitutions:
-  ##### DON'T CHANGE THIS ######
-  version: 2026031
-  min_blueprint_version: 2026030
-  min_tft_version: 2026030
-  min_esphome_compiler_version: 2026.1.0
+  # Automatically updated by CI/CD on each release
+  # Value is imported from versioning/version.yaml
+  <<: !include ../versioning/version.yaml
+
+  # Minimum required blueprint version for compatibility
+  # Select 'next' or '${version}' when you change the "contract" between ESPHome and Blueprint
+  # Versioning workflow will replace this by the new version being generated
+  min_blueprint_version: 2026.5.15
+
+  # Minimum required TFT version for compatibility
+  # Must be manually updated with Nextion Editor
+  min_tft_version: 20.0
+
+  # Minimum required ESPHome compiler to run this
+  # Versioning workflow will take care of updating this
+  min_esphome_compiler_version: 2026.5.0
+
   TAG_VERSIONING: nspanel.versioning
-  ##############################
+
+  # Those are safe-net for allowing compile when TFT Upload package isn't included
+  upload_tft_automatically: false
+  upload_tft_wait_ms_after_boot: 0
 
 esphome:
   project:
