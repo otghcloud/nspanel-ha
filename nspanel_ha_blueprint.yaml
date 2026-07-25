@@ -6,7 +6,7 @@
 #######################################################################################################
 ---
 blueprint:
-  name: NSPanel HA Configuration (v2026.7.5)
+  name: NSPanel HA Configuration (v2026.7.1)
   author: Lee Brooks (https://github.com/otghcloud)
   description: >
     # NSPanel HA Configuration via Blueprint
@@ -20,7 +20,7 @@ blueprint:
   source_url: https://github.com/otghcloud/nspanel-ha/blob/main/nspanel_ha_blueprint.yaml
   domain: automation
   homeassistant:
-    min_version: 2025.9.0
+    min_version: 2026.5.0
 
   input:
     nspanel_name:  # This key was kept with this name to support inputs from legacy versions where the panel name was used
@@ -4028,7 +4028,7 @@ trigger_variables:
     }}
 
 variables:
-  blueprint_version: 2026.7.0
+  blueprint_version: 2026.7.1
   pages:
     current: '{{ states(currentpage) }}'
     home: "home"
