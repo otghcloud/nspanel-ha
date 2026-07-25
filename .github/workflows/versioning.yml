@@ -308,7 +308,7 @@ jobs:
           NEW_VERSION: ${{ steps.next_version.outputs.version }}
         run: |
           git add ./versioning/version.yaml .github/ISSUE_TEMPLATE/bug.yml \
-                  esphome/nspanel_esphome_version.yaml nspanel_ha_version.yaml
+                  esphome/nspanel_esphome_version.yaml nspanel_ha_blueprint.yaml
           git commit -m "Bump version to ${NEW_VERSION} [skip-versioning]"
 
       - name: Push changes to main
