@@ -33,9 +33,7 @@ blueprint:
             - integration: esphome
               model: esp32dev
             - integration: esphome
-              model: NSPanel_HA_Blueprint
-            - integration: esphome
-              model: Wall_Display
+              model: nspanel-ha
     localization:
       name: Localization (optional)
       icon: mdi:earth
