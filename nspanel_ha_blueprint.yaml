@@ -5,7 +5,7 @@
 #######################################################################################################
 ---
 blueprint:
-  name: NSPanel HA Configuration (v2026.7.2)
+  name: NSPanel HA Configuration (v2026.7.3)
   author: Lee Brooks (https://github.com/otghcloud)
   description: >
     # NSPanel HA Configuration via Blueprint
@@ -4027,7 +4027,7 @@ trigger_variables:
     }}
 
 variables:
-  blueprint_version: 2026.7.2
+  blueprint_version: 2026.7.3
   pages:
     current: '{{ states(currentpage) }}'
     home: "home"
