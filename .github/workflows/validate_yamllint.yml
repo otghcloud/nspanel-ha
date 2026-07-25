@@ -1,0 +1,69 @@
+---
+name: Validate YAML (secondary files)
+
+# yamllint disable-line rule:truthy
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  code_scan:
+    name: Validate YAML
+    runs-on: self-hosted
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: '0'
+
+      - name: Identify changed files
+        uses: step-security/changed-files@v47.0.5
+        id: changed-files
+        with:
+          files: |
+            **/*.yml
+            **/*.yaml
+          separator: ","
+
+      - name: Validate YAML
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          set -e
+          failed=0
+          IFS=',' read -ra FILES <<< "${{ steps.changed-files.outputs.all_changed_files }}"
+          for file in "${FILES[@]}"; do
+            if [[ "$file" =~ ^nspanel_esphome.*\.yaml$ ]] || \
+              [[ "$file" =~ ^esphome/nspanel_esphome.*\.yaml$ ]] || \
+              [[ "$file" =~ ^prebuilt/nspanel_esphome.*\.yaml$ ]] || \
+              [[ "$file" == "nspanel_ha_blueprint.yaml" ]]; then
+              echo "Skipping $file"
+              continue
+            fi
+            echo "::group::Validating $file"
+            if ! yamllint -c "./.rules/yamllint.yml" "$file"; then
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $failed
+
+  # ===========================================================================
+  # Gate — required status check for branch protection
+  # ===========================================================================
+  all-checks-passed:
+    name: Validate YAML (secondary files) / All checks passed
+    runs-on: self-hosted
+    needs: code_scan
+    if: always()
+    steps:
+      - name: Check result
+        run: |
+          echo "code_scan: ${{ needs.code_scan.result }}"
+          case "${{ needs.code_scan.result }}" in
+            success|skipped) exit 0 ;;
+            *) exit 1              ;;
+          esac
+...

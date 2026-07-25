@@ -1,0 +1,115 @@
+#####################################################################################################
+##### NSPANEL ESPHOME created by Blackymas - https://github.com/otghcloud/nspanel-ha  #####
+##### ESPHOME CORE - DATE & TIME                                                                #####
+##### PLEASE only make changes if it is necessary and also the required knowledge is available. #####
+##### For normal use with the Blueprint, no changes are necessary.                              #####
+#####################################################################################################
+
+---
+substitutions:
+  ##############################
+  ## Change only in your      ##
+  ## local yaml substitutions ##
+  ##############################
+  BOOT_STEP_DATETIME: '2'
+  TAG_DATETIME: nspanel.datetime
+
+esphome:
+  platformio_options:
+    build_flags:
+      - -D NSPANEL_HA_DATETIME
+
+script:
+  - id: !extend action_component_text
+    then:
+      - lambda: |-
+          if (page == "mem") {
+            if (component == "time_format") {
+              id(mui_time_format) = txt;
+              return;
+            } else if (component == "meridiem_am") {
+              id(mui_meridiem_am) = txt;
+              return;
+            } else if (component == "meridiem_pm") {
+              id(mui_meridiem_pm) = txt;
+              return;
+            }
+          }
+
+  - id: !extend boot
+    then:
+      - lambda: |-
+          boot_log->execute("Date/Time", "Set time zone");
+
+  - id: new_minute
+    mode: restart
+    then:
+      - lambda: |-
+          refresh_datetime->execute();
+          refresh_hardware_buttons_bars->execute(3);
+          refresh_wifi_icon->execute();
+
+  - id: !extend page_home
+    then:
+      - script.execute: refresh_datetime
+
+  - id: refresh_datetime
+    mode: restart
+    then:
+      - lambda: |-
+          if (system_flags.tft_upload_active)  // Do not refresh if uploading TFT
+            return;
+
+          std::string time_format_str = id(mui_time_format);
+
+          if (time_format_str.find("%-H") != std::string::npos) {
+            time_format_str = time_format_str.replace(time_format_str.find("%-H"), sizeof("%-H")-1,
+                                                      to_string((int)(id(time_provider).now().hour)));
+          }
+
+          if (time_format_str.find("%-I") != std::string::npos) {
+            if (id(time_provider).now().hour>12) {
+              time_format_str = time_format_str.replace(time_format_str.find("%-I"), sizeof("%-I")-1,
+                                                        to_string((int)(id(time_provider).now().hour-12)));
+            } else if (id(time_provider).now().hour==0) {
+              time_format_str = time_format_str.replace(time_format_str.find("%-I"), sizeof("%-I")-1, "12");
+            } else {
+              time_format_str = time_format_str.replace(time_format_str.find("%-I"), sizeof("%-I")-1,
+                                                        to_string((int)(id(time_provider).now().hour)));
+            }
+          }
+
+          const std::string& meridiem_text = (id(time_provider).now().hour<12) ?
+                                              id(mui_meridiem_am) :
+                                              id(mui_meridiem_pm);
+
+          if (current_page->state == "screensaver" and id(screensaver_display_time)) {
+            std::string time_format_str_sleep = time_format_str;
+            if (time_format_str_sleep.find("%p") != std::string::npos)
+              time_format_str_sleep.replace(time_format_str_sleep.find("%p"), sizeof("%p")-1, meridiem_text.c_str());
+            disp1->set_component_text("text", id(time_provider).now().strftime(time_format_str_sleep).c_str());
+          }
+
+          disp1->set_component_text("home.meridiem", (time_format_str.find("%p") != std::string::npos) ?
+                                                      meridiem_text.c_str() : " ");
+          disp1->set_component_text("home.time", id(time_provider).now().strftime(time_format_str).c_str());
+
+  - id: !extend stop_all
+    then:
+      - lambda: |-
+          refresh_datetime->stop();
+
+time:  # Keeps time display updated
+  - id: time_provider
+    platform: homeassistant
+    on_time:
+      - seconds: 0
+        then:
+          - script.execute: new_minute
+
+    on_time_sync:
+      then:
+        - lambda: |-
+            ESP_LOGD("${TAG_DATETIME}", "System clock synchronized");
+            refresh_datetime->execute();
+...

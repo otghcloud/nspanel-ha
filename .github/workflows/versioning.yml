@@ -1,0 +1,569 @@
+# This GitHub Actions workflow handles version bumping, pre-built firmware, releases, and tag updates.
+#
+# Triggered by merging a PR to the main branch, it automatically:
+# 1. Bumps the CalVer version (YYYY.M.seq)
+# 2. Calculates the minimum upstream version (current month minus 2, YYYY.M.0)
+# 3. Resolves the "next" sentinel in min_blueprint_version, if set
+# 4. Updates min_esphome_compiler_version and blueprint homeassistant.min_version
+# 5. Updates the bug report template with current version placeholders
+# 6. Updates the blueprint version and display name
+# 7. Commits all version changes and pushes to main
+# 8. Builds pre-built firmware binaries in parallel (nspanel-easier, wall-display)
+# 9. Commits the compiled binaries, checksums, and manifests to main
+# 10. Creates a version tag and GitHub Release
+# 11. Updates the stable and latest floating tags
+# 12. Announces the release on Discord
+#
+# The workflow skips execution if the merge commit message contains
+# [skip-versioning] to prevent loops from its own version bump commits.
+
+---
+name: Version, Release & Tags
+
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+    paths-ignore:
+      - 'versioning/version.yaml'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Bump version, update bug template, and push to main.
+  # All downstream jobs depend on this one completing successfully.
+  # ---------------------------------------------------------------------------
+  bump:
+    name: Bump version
+    if: github.event.pull_request.merged == true
+    runs-on: self-hosted
+    concurrency:
+      group: version-and-release
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: read
+
+    outputs:
+      skip: ${{ steps.skip_check.outputs.skip }}
+      version: ${{ steps.next_version.outputs.version }}
+      release_sha: ${{ steps.capture_sha.outputs.sha }}
+      pr_title: ${{ fromJson(steps.pr_info.outputs.result).title }}
+      pr_body: ${{ fromJson(steps.pr_info.outputs.result).body }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check for skip marker
+        id: skip_check
+        run: |
+          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+          if echo "$COMMIT_MESSAGE" | grep -q "\[skip-versioning\]"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Skipping workflow due to [skip-versioning] marker"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # -------------------------------------------------------------------
+      # Version bump and file updates
+      # -------------------------------------------------------------------
+
+      - name: Set up Git
+        if: steps.skip_check.outputs.skip == 'false'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Get PR information
+        id: pr_info
+        if: steps.skip_check.outputs.skip == 'false'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            try {
+              const pr = context.payload.pull_request;
+              return {
+                title: pr.title,
+                body: pr.body || 'No description provided',
+                number: pr.number,
+                found: true
+              };
+            } catch (error) {
+              console.log('Could not get PR info:', error.message);
+              return {
+                title: 'Version update',
+                body: 'Automated version bump',
+                number: null,
+                found: false
+              };
+            }
+
+      - name: Fetch latest main and rebase
+        if: steps.skip_check.outputs.skip == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Rebase early so the version we read is up-to-date,
+          # avoiding duplicate versions when PRs merge in quick succession.
+          git fetch origin main
+          git rebase origin/main || {
+            echo "Rebase failed - main has diverged"
+            exit 1
+          }
+
+      - name: Calculate next version
+        id: next_version
+        if: steps.skip_check.outputs.skip == 'false'
+        run: |
+          # Read version AFTER rebase to avoid race conditions
+          CURRENT_VERSION=$(yq eval '.version' ./versioning/version.yaml)
+          if [[ -z "$CURRENT_VERSION" || "$CURRENT_VERSION" == "null" ]]; then
+            echo "Error: Could not read version from versioning/version.yaml"
+            exit 1
+          fi
+
+          # Validate the current version format (CalVer: YYYY.M.seq)
+          if ! [[ "$CURRENT_VERSION" =~ ^[0-9]{4}\.[0-9]{1,2}\.[0-9]+$ ]]; then
+            echo "Error: Invalid version format: $CURRENT_VERSION"
+            exit 1
+          fi
+
+          # Extract components
+          CURRENT_YEAR=$(date +%Y)
+          CURRENT_MONTH=$(date +%-m)  # No leading zero
+          CURRENT_SEQ=$(echo "$CURRENT_VERSION" | awk -F. '{print $3}')
+          VERSION_YEAR=$(echo "$CURRENT_VERSION" | awk -F. '{print $1}')
+          VERSION_MONTH=$(echo "$CURRENT_VERSION" | awk -F. '{print $2}')
+
+          # Increment sequence or reset for a new month
+          if [[ "$CURRENT_YEAR" == "$VERSION_YEAR" \
+             && "$CURRENT_MONTH" == "$VERSION_MONTH" ]]; then
+            NEXT_SEQ=$((CURRENT_SEQ + 1))
+          else
+            NEXT_SEQ=1
+          fi
+
+          NEXT_VERSION="${CURRENT_YEAR}.${CURRENT_MONTH}.${NEXT_SEQ}"
+          echo "version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Bumping version: $CURRENT_VERSION -> $NEXT_VERSION"
+
+      - name: Calculate minimum upstream versions
+        id: min_upstream
+        if: steps.skip_check.outputs.skip == 'false'
+        run: |
+          # Minimum upstream version is always 2 months behind the current month,
+          # with patch fixed at 0 (e.g. April 2026 -> 2026.2.0, Jan 2026 -> 2025.11.0).
+          # This is the contract for the minimum ESPHome compiler and Home Assistant
+          # versions required to build and run NSPanel Easier.
+          CURRENT_YEAR=$(date +%Y)
+          CURRENT_MONTH=$(date +%-m)  # No leading zero
+
+          MIN_MONTH=$((CURRENT_MONTH - 2))
+          MIN_YEAR=$CURRENT_YEAR
+          if [[ $MIN_MONTH -le 0 ]]; then
+            MIN_MONTH=$((MIN_MONTH + 12))
+            MIN_YEAR=$((MIN_YEAR - 1))
+          fi
+
+          MIN_UPSTREAM_VERSION="${MIN_YEAR}.${MIN_MONTH}.0"
+          echo "version=${MIN_UPSTREAM_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Minimum upstream version: ${MIN_UPSTREAM_VERSION}"
+
+      - name: Update version.yaml file
+        if: steps.skip_check.outputs.skip == 'false'
+        env:
+          NEW_VERSION: ${{ steps.next_version.outputs.version }}
+        run: |
+          yq eval '.version = strenv(NEW_VERSION)' -i ./versioning/version.yaml
+
+      - name: Resolve min_blueprint_version sentinel and update upstream versions
+        if: steps.skip_check.outputs.skip == 'false'
+        env:
+          NEW_VERSION: ${{ steps.next_version.outputs.version }}
+          MIN_UPSTREAM_VERSION: ${{ steps.min_upstream.outputs.version }}
+        run: |
+          ESPHOME_VERSION_FILE="esphome/nspanel_esphome_version.yaml"
+
+          # sed is used intentionally here instead of yq — yq strips the !!merge
+          # tag from the !include line and removes blank lines, corrupting the file.
+
+          # If min_blueprint_version is set to the sentinel "next" or "${version}",
+          # replace it with the actual version being released, tying the compatibility
+          # requirement to this exact release.
+          if grep -qE '^  min_blueprint_version: (next|\$\{version\})$' "$ESPHOME_VERSION_FILE"; then
+            sed -i \
+              "s/^  min_blueprint_version: .*/  min_blueprint_version: ${NEW_VERSION}/" \
+              "$ESPHOME_VERSION_FILE"
+            if ! grep -q "^  min_blueprint_version: ${NEW_VERSION}$" "$ESPHOME_VERSION_FILE"; then
+              echo "ERROR: Failed to resolve min_blueprint_version sentinel in $ESPHOME_VERSION_FILE"
+              exit 1
+            fi
+            echo "Resolved min_blueprint_version sentinel to ${NEW_VERSION}"
+          else
+            MIN_BP=$(grep "^  min_blueprint_version:" "$ESPHOME_VERSION_FILE" | awk '{print $2}')
+            echo "min_blueprint_version is already set to ${MIN_BP}, no sentinel to resolve"
+          fi
+
+          # Always update the minimum ESPHome compiler version to 2 months ago,
+          # keeping the upstream contract in sync with the release date.
+          sed -i \
+            "s/^  min_esphome_compiler_version: .*/  min_esphome_compiler_version: ${MIN_UPSTREAM_VERSION}/" \
+            "$ESPHOME_VERSION_FILE"
+          if ! grep -q "^  min_esphome_compiler_version: ${MIN_UPSTREAM_VERSION}$" "$ESPHOME_VERSION_FILE"; then
+            echo "ERROR: Failed to update min_esphome_compiler_version in $ESPHOME_VERSION_FILE"
+            exit 1
+          fi
+          echo "Updated min_esphome_compiler_version to ${MIN_UPSTREAM_VERSION}"
+
+      - name: Extract cross-component version information
+        id: versions
+        if: steps.skip_check.outputs.skip == 'false'
+        run: |
+          VERSION=$(yq eval '.version' ./versioning/version.yaml)
+          MIN_BLUEPRINT_VERSION=$(yq eval \
+            '.substitutions.min_blueprint_version' \
+            esphome/nspanel_esphome_version.yaml)
+          MIN_TFT_VERSION=$(yq eval \
+            '.substitutions.min_tft_version' \
+            esphome/nspanel_esphome_version.yaml)
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "min_blueprint_version=${MIN_BLUEPRINT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "min_tft_version=${MIN_TFT_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Update bug report template with current versions
+        if: steps.skip_check.outputs.skip == 'false'
+        env:
+          VERSION: ${{ steps.versions.outputs.version }}
+          MIN_BLUEPRINT_VERSION: ${{ steps.versions.outputs.min_blueprint_version }}
+          MIN_TFT_VERSION: ${{ steps.versions.outputs.min_tft_version }}
+        run: |
+          # Use label-anchored Python script to avoid fragile body index references.
+          python3 .github/scripts/update_bug_template.py \
+            .github/ISSUE_TEMPLATE/bug.yml \
+            "$MIN_TFT_VERSION" \
+            "$VERSION" \
+            "$MIN_BLUEPRINT_VERSION"
+
+      - name: Update blueprint version and name
+        if: steps.skip_check.outputs.skip == 'false'
+        env:
+          NEW_VERSION: ${{ steps.next_version.outputs.version }}
+          MIN_UPSTREAM_VERSION: ${{ steps.min_upstream.outputs.version }}
+        run: |
+          BLUEPRINT="nspanel_ha_blueprint.yaml"
+
+          # sed is used intentionally here instead of yq — the blueprint contains
+          # a large icon table with unicode escape sequences (\uXXXX) that yq would
+          # silently convert to their literal UTF-8 characters, corrupting the file.
+
+          # Update the blueprint display name shown in the HA Blueprints dashboard.
+          sed -i \
+            "s/^  name: NSPanel HA Configuration.*/  name: NSPanel HA Configuration (v${NEW_VERSION})/" \
+            "$BLUEPRINT"
+          if ! grep -q "^  name: NSPanel HA Configuration (v${NEW_VERSION})" "$BLUEPRINT"; then
+            echo "ERROR: Failed to update blueprint display name in $BLUEPRINT"
+            exit 1
+          fi
+
+          # Update the blueprint's own version number, used by ESPHome to verify
+          # compatibility against min_blueprint_version at runtime.
+          sed -i \
+            "s/^  blueprint_version: .*/  blueprint_version: ${NEW_VERSION}/" \
+            "$BLUEPRINT"
+          if ! grep -q "^  blueprint_version: ${NEW_VERSION}$" "$BLUEPRINT"; then
+            echo "ERROR: Failed to update blueprint_version in $BLUEPRINT"
+            exit 1
+          fi
+
+          # Update the minimum Home Assistant version required to run this blueprint,
+          # kept 2 months behind the release date to match the upstream contract.
+          sed -i \
+            "s/^    min_version: .*/    min_version: ${MIN_UPSTREAM_VERSION}/" \
+            "$BLUEPRINT"
+          if ! grep -q "^    min_version: ${MIN_UPSTREAM_VERSION}$" "$BLUEPRINT"; then
+            echo "ERROR: Failed to update min_version in $BLUEPRINT"
+            exit 1
+          fi
+
+      - name: Restore YAML document end markers
+        if: steps.skip_check.outputs.skip == 'false'
+        run: |
+          # yq strips the YAML document end marker (...) on in-place edits.
+          # Re-append it to all files modified by yq.
+          for file in ./versioning/version.yaml; do
+            if [ -f "$file" ] && ! tail -1 "$file" | grep -qx '\.\.\.'; then
+              echo '...' >> "$file"
+            fi
+          done
+
+      - name: Commit version and template changes
+        if: steps.skip_check.outputs.skip == 'false'
+        env:
+          NEW_VERSION: ${{ steps.next_version.outputs.version }}
+        run: |
+          git add ./versioning/version.yaml .github/ISSUE_TEMPLATE/bug.yml \
+                  esphome/nspanel_esphome_version.yaml nspanel_ha_version.yaml
+          git commit -m "Bump version to ${NEW_VERSION} [skip-versioning]"
+
+      - name: Push changes to main
+        if: steps.skip_check.outputs.skip == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Rebase in case main advanced during workflow execution
+          git fetch origin main
+          git rebase origin/main || {
+            echo "Rebase failed - main has diverged"
+            exit 1
+          }
+          git push origin HEAD:main
+
+      - name: Capture post-bump SHA
+        id: capture_sha
+        if: steps.skip_check.outputs.skip == 'false'
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------
+  # Build pre-built firmware: nspanel-ha
+  # ---------------------------------------------------------------------------
+  build-nspanel:
+    name: Build pre-built (nspanel-ha)
+    needs: bump
+    if: needs.bump.outputs.skip == 'false'
+    runs-on: self-hosted
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout post-bump main
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.bump.outputs.release_sha }}
+          fetch-depth: 1
+
+      - name: Build firmware
+        uses: esphome/build-action@main
+        with:
+          yaml-file: prebuilt/nspanel_esphome_prebuilt.yaml
+          substitutions: |
+            ref_name=${{ needs.bump.outputs.release_sha }}
+            ref_url=https://github.com/otghcloud/nspanel-ha
+
+      - name: Locate compiled binaries
+        id: locate
+        run: |
+          BIN=$(find prebuilt/.esphome/build -name "firmware.ota.bin" | head -1)
+          BIN_FACTORY=$(find prebuilt/.esphome/build -name "firmware.factory.bin" | head -1)
+          if [ -z "$BIN" ]; then
+            echo "ERROR: firmware.ota.bin not found after build"
+            echo "Build directory contents:"
+            find prebuilt/.esphome/build -type f 2>/dev/null || echo "Build directory does not exist"
+            exit 1
+          fi
+          echo "bin=${BIN}" >> "$GITHUB_OUTPUT"
+          echo "bin_factory=${BIN_FACTORY}" >> "$GITHUB_OUTPUT"
+
+      - name: Copy artifacts to staging directory
+        env:
+          BIN: ${{ steps.locate.outputs.bin }}
+          BIN_FACTORY: ${{ steps.locate.outputs.bin_factory }}
+        run: |
+          mkdir -p staging
+          cp "$BIN" staging/nspanel_esphome_prebuilt.bin
+          if [ -n "$BIN_FACTORY" ]; then
+            cp "$BIN_FACTORY" staging/nspanel_esphome_prebuilt-factory.bin
+          fi
+
+      - name: Generate checksums
+        run: |
+          md5sum staging/nspanel_esphome_prebuilt.bin \
+            | awk '{print $1}' > staging/nspanel_esphome_prebuilt.bin.md5
+          if [ -f staging/nspanel_esphome_prebuilt-factory.bin ]; then
+            md5sum staging/nspanel_esphome_prebuilt-factory.bin \
+              | awk '{print $1}' > staging/nspanel_esphome_prebuilt-factory.bin.md5
+          fi
+
+      - name: Generate update manifest
+        env:
+          NEW_VERSION: ${{ needs.bump.outputs.version }}
+        run: |
+          MD5=$(cat staging/nspanel_esphome_prebuilt.bin.md5)
+          jq -n \
+            --arg name    "NSPanel HA Pre-built" \
+            --arg version "$NEW_VERSION" \
+            --arg path    "nspanel_esphome_prebuilt.bin" \
+            --arg md5     "$MD5" \
+            --arg summary "NSPanel HA Pre-built v${NEW_VERSION}" \
+            --arg url     "https://github.com/otghcloud/nspanel-ha/releases/tag/v${NEW_VERSION}" \
+            '{
+              name: $name,
+              version: $version,
+              home_assistant_domain: "esphome",
+              new_install_prompt_erase: false,
+              builds: [{
+                chipFamily: "ESP32",
+                ota: {path: $path, md5: $md5, summary: $summary, release_url: $url}
+              }]
+            }' > staging/nspanel_esphome_prebuilt.manifest.json
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: prebuilt-nspanel
+          path: staging/
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Collect firmware artifacts, commit to main, tag, and release.
+  # Runs only after build jobs succeed.
+  # ---------------------------------------------------------------------------
+  commit-and-release:
+    name: Commit artifacts & release
+    needs: [bump, build-nspanel]
+    if: needs.bump.outputs.skip == 'false'
+    runs-on: self-hosted
+    concurrency:
+      group: version-and-release
+      cancel-in-progress: false
+    permissions:
+      contents: write
+
+    outputs:
+      released: ${{ steps.push_tag.outcome == 'success' }}
+      version: ${{ needs.bump.outputs.version }}
+      release_url: ${{ steps.create_release.outputs.url }}
+
+    steps:
+      - name: Checkout post-bump main
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.bump.outputs.release_sha }}
+          fetch-depth: 0
+
+      - name: Set up Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Remove previously committed generated artifacts
+        run: |
+          # Remove all known generated files so stale artifacts from a previous
+          # release (e.g. factory binaries) are not silently carried forward.
+          rm -f \
+            prebuilt/nspanel_esphome_prebuilt.bin \
+            prebuilt/nspanel_esphome_prebuilt.bin.md5 \
+            prebuilt/nspanel_esphome_prebuilt.manifest.json \
+            prebuilt/nspanel_esphome_prebuilt-factory.bin \
+            prebuilt/nspanel_esphome_prebuilt-factory.bin.md5
+
+      - name: Download nspanel-ha artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: prebuilt-nspanel
+          path: prebuilt/
+
+      - name: Verify pre-built artifacts
+        run: |
+          # Check all required files exist and are non-empty (-s: exists and size > 0).
+          # Factory binaries are optional and excluded from this check.
+          ok=true
+          for f in \
+            prebuilt/nspanel_esphome_prebuilt.bin \
+            prebuilt/nspanel_esphome_prebuilt.bin.md5 \
+            prebuilt/nspanel_esphome_prebuilt.manifest.json \
+            prebuilt/nspanel_esphome_prebuilt-factory.bin; do
+            if [ ! -s "$f" ]; then
+              echo "ERROR: missing or empty file: $f"
+              ok=false
+            else
+              echo "OK: $f ($(wc -c < "$f") bytes)"
+            fi
+          done
+          [ "$ok" = true ] || exit 1
+
+      - name: Commit pre-built artifacts
+        env:
+          NEW_VERSION: ${{ needs.bump.outputs.version }}
+        run: |
+          # Stage all changes under prebuilt/ including deletions of stale files.
+          git add -A prebuilt/
+          git diff --cached --quiet || \
+            git commit -m "build: pre-built firmware for v${NEW_VERSION} [skip-versioning]"
+
+      - name: Push artifacts to main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Push directly — no rebase. If main has advanced since the bump job
+          # pushed, abort rather than silently tagging the wrong revision.
+          git push origin HEAD:main || {
+            echo "ERROR: main has advanced since artifacts were built; aborting to avoid tagging the wrong revision"
+            exit 1
+          }
+
+      # -------------------------------------------------------------------
+      # Tag and release (after binary commit, so tag points to final state)
+      # -------------------------------------------------------------------
+
+      - name: Build tag message from PR
+        env:
+          NEW_VERSION: ${{ needs.bump.outputs.version }}
+          PR_TITLE: ${{ needs.bump.outputs.pr_title }}
+          PR_BODY: ${{ needs.bump.outputs.pr_body }}
+        run: |
+          {
+            printf '# v%s - %s\n\n' "$NEW_VERSION" "$PR_TITLE"
+            printf '%s\n' "$PR_BODY"
+          } > tag_message.txt
+
+      - name: Create and push version tag
+        id: push_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_VERSION: ${{ needs.bump.outputs.version }}
+        run: |
+          git tag -a "v${NEW_VERSION}" -F tag_message.txt
+          git push origin "v${NEW_VERSION}"
+
+      - name: Create GitHub Release
+        id: create_release
+        if: steps.push_tag.outcome == 'success'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ needs.bump.outputs.version }}
+          name: v${{ needs.bump.outputs.version }} - ${{ needs.bump.outputs.pr_title }}
+          generate_release_notes: true
+
+      # -------------------------------------------------------------------
+      # Update floating tags (stable & latest)
+      # -------------------------------------------------------------------
+
+      - name: Update stable tag
+        if: steps.push_tag.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git rev-parse --verify stable >/dev/null 2>&1; then
+            echo "Previous stable: $(git rev-parse stable)"
+          fi
+          git tag -fa stable -F tag_message.txt
+          git push origin stable --force
+
+      - name: Update latest tag
+        if: steps.push_tag.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git rev-parse --verify latest >/dev/null 2>&1; then
+            echo "Previous latest: $(git rev-parse latest)"
+          fi
+          git tag -fa latest -F tag_message.txt
+          git push origin latest --force
+
+...
