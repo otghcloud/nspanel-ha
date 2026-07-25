@@ -1,16 +1,10 @@
-#####################################################################################################
-##### NSPANEL ESPHOME created by Blackymas - https://github.com/otghcloud/nspanel-ha  #####
-##### ESPHOME CORE - BOOT                                                                       #####
-##### PLEASE only make changes if it is necessary and also the required knowledge is available. #####
-##### For normal use with the Blueprint, no changes are necessary.                              #####
-#####################################################################################################
+##################################################################
+##### NSPanel HA  - https://github.com/otghcloud/nspanel-ha  #####
+##### ESPHome Core - Boot                                    #####
+##################################################################
 
 ---
 substitutions:
-  ##############################
-  ## Change only in your      ##
-  ## local yaml substitutions ##
-  ##############################
   BOOT_STEP_BOOT: 1
   BOOT_EVENT_REPEAT_INTERVAL_MS: 10000
   TAG_BOOT: nspanel.boot
