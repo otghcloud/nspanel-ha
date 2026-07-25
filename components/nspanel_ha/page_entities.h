@@ -8,7 +8,7 @@
 
 namespace nspanel_ha {
 
-    extern uint8_t page_entities_value_horizontal_alignment;
+extern uint8_t page_entities_value_horizontal_alignment;
 
 }  // namespace nspanel_ha
 

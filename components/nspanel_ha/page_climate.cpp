@@ -6,18 +6,18 @@
 
 namespace nspanel_ha {
 
-    float set_climate_current_temp;
-    uint32_t set_climate_supported_features;
-    float set_climate_target_temp;
-    float set_climate_target_temp_high;
-    float set_climate_target_temp_low;
-    uint8_t set_climate_temp_step;
-    uint16_t set_climate_total_steps;
-    uint16_t set_climate_temp_offset;
-    std::string set_climate_climate_icon;
-    bool set_climate_embedded_climate;
+float set_climate_current_temp;
+uint32_t set_climate_supported_features;
+float set_climate_target_temp;
+float set_climate_target_temp_high;
+float set_climate_target_temp_low;
+uint8_t set_climate_temp_step;
+uint16_t set_climate_total_steps;
+uint16_t set_climate_temp_offset;
+std::string set_climate_climate_icon;
+bool set_climate_embedded_climate;
 
-    const char *temperature_unit = "°C";  // default
+const char *temperature_unit = "°C";  // default
 
 }  // namespace nspanel_ha
 
