@@ -37,7 +37,7 @@ Outputs (written to --output-dir, default: ./output)
   all_icons.h
       C++ header with all icon ZI codepoints as constexpr constants,
       following ESPHome/NSPanel Easier coding conventions (clang-format
-      aligned, Doxygen ///<, esphome::nspanel_easier::Icons namespace).
+      aligned, Doxygen ///<, esphome::nspanel_ha::Icons namespace).
 
 Codepoint scheme
 ----------------
@@ -136,12 +136,12 @@ def parse_args():
     parser.add_argument(
         "--docs-dir", default=None,
         help="If set, also copy cheatsheet.html, TTF, and all_icons.json here "
-             "(e.g. path/to/NSPanel-Easier/docs/icons)"
+             "(e.g. path/to/nspanel-ha/docs/icons)"
     )
     parser.add_argument(
         "--header-dir", default=None,
         help="If set, also copy all_icons.h here "
-             "(e.g. path/to/NSPanel-Easier/components/nspanel_easier)"
+             "(e.g. path/to/nspanel-ha/components/nspanel_ha)"
     )
     parser.add_argument(
         "--dry-run", action="store_true",
@@ -565,7 +565,7 @@ def build_header(zi_map, version_str, output_path):
     """
     Write all_icons.h — constexpr ZI codepoint constants following ESPHome /
     NSPanel Easier coding conventions: clang-format aligned, Doxygen ///<,
-    esphome::nspanel_easier::Icons namespace.
+    esphome::nspanel_ha::Icons namespace.
 
     The generator emits a readable first pass, then pipes the result through
     clang-format so the file on disk is byte-identical to what CI would produce.
@@ -594,7 +594,7 @@ def build_header(zi_map, version_str, output_path):
         "",
         "#include <cstdint>",
         "",
-        "namespace esphome::nspanel_easier {",
+        "namespace esphome::nspanel_ha {",
         "",
         "/**",
         " * @namespace Icons",
@@ -624,7 +624,7 @@ def build_header(zi_map, version_str, output_path):
         "",
         "}  // namespace Icons",
         "",
-        "}  // namespace esphome::nspanel_easier",
+        "}  // namespace esphome::nspanel_ha",
         "",
     ]
 
@@ -635,7 +635,7 @@ def build_header(zi_map, version_str, output_path):
     # so the repo root is four parents up (file → fonts → dev → hmi → repo),
     # and .clang-format lives there.
     repo_root       = Path(__file__).resolve().parents[3]
-    style_hint_path = repo_root / "components" / "nspanel_easier" / "all_icons.h"
+    style_hint_path = repo_root / "components" / "nspanel_ha" / "all_icons.h"
     try:
         result = subprocess.run(
             ["clang-format", "--style=file",

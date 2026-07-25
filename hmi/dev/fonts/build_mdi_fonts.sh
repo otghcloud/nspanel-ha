@@ -5,7 +5,7 @@
 #
 # Expected directory layout (sibling repos):
 #   ../MaterialDesign-SVG/   <- Templarian/MaterialDesign-SVG clone
-#   ../NSPanel-Easier/         <- this repo
+#   ../nspanel-ha/         <- this repo
 #
 # To clone the MDI SVG repo (first time only):
 #   git clone https://github.com/Templarian/MaterialDesign-SVG.git \
@@ -28,7 +28,7 @@ SVG_DIR="$(cd "${REPO_DIR}/../MaterialDesign-SVG" 2>/dev/null && pwd)" || {
 
 OUTPUT_DIR="${REPO_DIR}/../mdi-build"
 DOCS_DIR="${REPO_DIR}/docs/icons"
-HEADER_DIR="${REPO_DIR}/components/nspanel_easier"
+HEADER_DIR="${REPO_DIR}/components/nspanel_ha"
 
 echo "Repo:      ${REPO_DIR}"
 echo "SVG dir:   ${SVG_DIR}"

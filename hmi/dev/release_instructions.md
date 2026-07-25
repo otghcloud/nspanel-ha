@@ -19,7 +19,7 @@ Follow these guidelines carefully to ensure a smooth and consistent release proc
        - `nspanel_esphome_version.yaml`: Update the `substitutions` section with the version number of the Blueprint and TFT.
          Note that you shouldn't edit the ESPHome version, as that will be automatically updated during a release to GitHub.
      - **Blueprint**:
-       - `nspanel_easier_blueprint.yaml`: Update the version number in both the blueprint description and the `variables` area.
+       - `nspanel_ha_blueprint.yaml`: Update the version number in both the blueprint description and the `variables` area.
      - **TFT**:
        - For all `.hmi` files (e.g., `nspanel_xxx.hmi`), update the `version` variable on the boot page. You can use `scripts/update_nextion_version.sh <new_version>` for that.
 
