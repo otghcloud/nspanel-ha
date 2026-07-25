@@ -36,9 +36,10 @@ esp32:
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
-  comment: NSPanel HA Blueprint
+  comment: NSPanel HA
   project:
-    name: Blackymas.NSPanel_HA_Blueprint
+    name: otghcloud.nspanel-ha
+    version: ${version}
   platformio_options:
     build_flags:
       - -D NSPANEL_HA_BASE
@@ -46,8 +47,8 @@ esphome:
 external_components:
   - source:
       type: git
-      url: https://github.com/otghcloud/nspanel-ha
-      ref: v${version}
+      url: ${ref_url}
+      ref: ${ref_name}
     refresh: 300s
     components:
       - nspanel_ha
