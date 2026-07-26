@@ -93,7 +93,7 @@ script:
               system_flags.version_check_ok = false;
             }
           }
-          if (version_tft->state != "${version}") {
+          if (version_tft->state != "${min_tft_version}") {
             ESP_LOGW("${TAG_VERSIONING}", "TFT version mismatch!");
             if (version_tft->state < "${min_tft_version}") {
               ESP_LOGE("${TAG_VERSIONING}", "v${min_tft_version} or later is required");
