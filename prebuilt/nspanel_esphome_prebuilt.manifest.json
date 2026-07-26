@@ -1,6 +1,6 @@
 {
   "name": "NSPanel HA Pre-built",
-  "version": "2026.7.4",
+  "version": "2026.7.5",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": false,
   "builds": [
@@ -8,9 +8,9 @@
       "chipFamily": "ESP32",
       "ota": {
         "path": "nspanel_esphome_prebuilt.bin",
-        "md5": "4cc5ae11b77e62df30a073ec577ec2d4",
-        "summary": "NSPanel HA Pre-built v2026.7.4",
-        "release_url": "https://github.com/otghcloud/nspanel-ha/releases/tag/v2026.7.4"
+        "md5": "8714f050a03ddd39972245ce2abda197",
+        "summary": "NSPanel HA Pre-built v2026.7.5",
+        "release_url": "https://github.com/otghcloud/nspanel-ha/releases/tag/v2026.7.5"
       }
     }
   ]
