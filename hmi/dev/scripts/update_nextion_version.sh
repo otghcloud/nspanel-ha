@@ -39,5 +39,4 @@ update_version () {
 }
 
 update_version "$HMI_DIR/nspanel_blank.hmi"
-update_version "$HMI_DIR/nspanel_landscape.hmi"
-update_version "$HMI_DIR/nspanel_portrait.hmi"
+update_version "$HMI_DIR/nspanel_eu.hmi"

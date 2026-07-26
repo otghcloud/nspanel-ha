@@ -7,12 +7,13 @@
 # 4. Updates min_esphome_compiler_version and blueprint homeassistant.min_version
 # 5. Updates the bug report template with current version placeholders
 # 6. Updates the blueprint version and display name
-# 7. Commits all version changes and pushes to main
-# 8. Builds pre-built firmware binaries in parallel (nspanel-ha, wall-display)
-# 9. Commits the compiled binaries, checksums, and manifests to main
-# 10. Creates a version tag and GitHub Release
-# 11. Updates the stable and latest floating tags
-# 12. Announces the release on Discord
+# 7. Updates HMI/Nextion source and TFT files with the new version
+# 8. Commits all version changes and pushes to main
+# 9. Builds pre-built firmware binaries in parallel (nspanel-ha, wall-display)
+# 10. Commits the compiled binaries, checksums, and manifests to main
+# 11. Creates a version tag and GitHub Release
+# 12. Updates the stable and latest floating tags
+# 13. Announces the release on Discord
 #
 # The workflow skips execution if the merge commit message contains
 # [skip-versioning] to prevent loops from its own version bump commits.
@@ -291,6 +292,13 @@ jobs:
             exit 1
           fi
 
+      - name: Update Nextion HMI/TFT versions
+        if: steps.skip_check.outputs.skip == 'false'
+        env:
+          NEW_VERSION: ${{ steps.next_version.outputs.version }}
+        run: |
+          bash hmi/dev/scripts/update_nextion_version.sh "${NEW_VERSION}"
+
       - name: Restore YAML document end markers
         if: steps.skip_check.outputs.skip == 'false'
         run: |
@@ -308,7 +316,9 @@ jobs:
           NEW_VERSION: ${{ steps.next_version.outputs.version }}
         run: |
           git add ./versioning/version.yaml .github/ISSUE_TEMPLATE/bug.yml \
-                  esphome/nspanel_esphome_version.yaml nspanel_ha_blueprint.yaml
+                  esphome/nspanel_esphome_version.yaml nspanel_ha_blueprint.yaml \
+                  hmi/nspanel_blank.hmi hmi/nspanel_blank.tft \
+                  hmi/nspanel_eu.hmi hmi/nspanel_eu.tft
           git commit -m "Bump version to ${NEW_VERSION} [skip-versioning]"
 
       - name: Push changes to main
