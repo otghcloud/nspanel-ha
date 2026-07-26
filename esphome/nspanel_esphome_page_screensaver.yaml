@@ -13,8 +13,7 @@ substitutions:
   TAG_PAGE_SCREENSAVER: nspanel.page.screensaver
 
 esphome:
-  platformio_options:
-    build_flags:
+  build_flags:
       - -D NSPANEL_HA_PAGE_SCREENSAVER
 
 globals:

@@ -191,8 +191,7 @@ api:
             ESP_LOGV("${TAG_PAGE_MEDIA_PLAYER}", "Action: page_media_player completed");
 
 esphome:
-  platformio_options:
-    build_flags:
+  build_flags:
       - -D NSPANEL_HA_PAGE_MEDIA_PLAYER
 
 script:

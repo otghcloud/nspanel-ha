@@ -1,16 +1,13 @@
-#####################################################################################################
-##### NSPANEL ESPHOME created by Blackymas - https://github.com/otghcloud/nspanel-ha  #####
-##### ESPHOME ADD-ON - DISPLAY LIGHT                                                            #####
-##### PLEASE only make changes if it is necessary and also the required knowledge is available. #####
-##### For normal use with the Blueprint, no changes are necessary.                              #####
-#####################################################################################################
+##################################################################
+##### NSPanel HA  - https://github.com/otghcloud/nspanel-ha  #####
+##### ESPHome Addon - Display - Light                        #####
+##################################################################
 ---
 substitutions:
   TAG_ADDON_DISPLAY_LIGHT: nspanel.addon.display_light
 
 esphome:
-  platformio_options:
-    build_flags:
+  build_flags:
       - -D NSPANEL_HA_ADDON_DISPLAY_LIGHT
 
 light:

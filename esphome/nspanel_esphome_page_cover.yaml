@@ -12,8 +12,7 @@ substitutions:
   TAG_PAGE_COVER: nspanel.page.cover
 
 esphome:
-  platformio_options:
-    build_flags:
+  build_flags:
       - -D NSPANEL_HA_PAGE_COVER
 
 script:

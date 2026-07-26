@@ -238,8 +238,7 @@ api:
             }
 
 esphome:
-  platformio_options:
-    build_flags:
+  build_flags:
       - -D NSPANEL_HA_API
 
 script:

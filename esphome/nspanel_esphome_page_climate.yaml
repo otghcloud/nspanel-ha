@@ -76,8 +76,7 @@ display:
             }
 
 esphome:
-  platformio_options:
-    build_flags:
+  build_flags:
       - -D NSPANEL_HA_PAGE_CLIMATE
 
 globals:

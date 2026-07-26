@@ -9,8 +9,7 @@ substitutions:
   TAG_STANDARD: nspanel.standard
 
 esphome:
-  platformio_options:
-    build_flags:
+  build_flags:
       - -D NSPANEL_HA_STANDARD
 
 packages:

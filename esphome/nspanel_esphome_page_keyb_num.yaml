@@ -11,8 +11,7 @@ substitutions:
   TAG_PAGE_KEYB_NUM: nspanel.page.keyb_num
 
 esphome:
-  platformio_options:
-    build_flags:
+  build_flags:
       - -D NSPANEL_HA_PAGE_KEYB_NUM
 
 script:

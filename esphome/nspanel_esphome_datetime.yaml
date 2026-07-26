@@ -15,8 +15,7 @@ substitutions:
   TAG_DATETIME: nspanel.datetime
 
 esphome:
-  platformio_options:
-    build_flags:
+  build_flags:
       - -D NSPANEL_HA_DATETIME
 
 script:

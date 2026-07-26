@@ -1,11 +1,7 @@
-#####################################################################################################
-##### NSPANEL ESPHOME created by Blackymas - https://github.com/otghcloud/nspanel-ha  #####
-##### ESPHome Add-on for Climate control - Heat                                                 #####
-##### PLEASE only make changes if it is necessary and also the required knowledge is available. #####
-##### For normal use with the Blueprint, no changes are necessary.                              #####
-#####################################################################################################
-##### ATTENTION: This will add climate elements to the core system and requires the core part.  #####
-#####################################################################################################
+##################################################################
+##### NSPanel HA  - https://github.com/otghcloud/nspanel-ha  #####
+##### ESPHome Addon - Climate Control - Heat                 #####
+##################################################################
 ---
 substitutions:
   ##############################
@@ -16,8 +12,7 @@ substitutions:
   temp_max: ${113 if TEMP_UNIT_IS_FAHRENHEIT else 45}
 
 esphome:
-  platformio_options:
-    build_flags:
+  build_flags:
       - -D NSPANEL_HA_ADDON_CLIMATE_HEAT
 
 climate:
