@@ -32,9 +32,8 @@ esp32:
       CONFIG_SPIRAM_RODATA: y
 
 esphome:
-  platformio_options:
-    build_flags:
-      - -D NSPANEL_HA_HW_MEMORY
+  build_flags:
+    - -D NSPANEL_HA_HW_MEMORY
       - -D USE_ESP32_MIN_CHIP_REVISION_SET  # Remove after implementing `minimum_chip_revision`
 
 nspanel_ha:

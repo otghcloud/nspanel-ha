@@ -32,9 +32,8 @@ substitutions:
 esphome:
   project:
     version: '"${version}"'
-  platformio_options:
-    build_flags:
-      - -D NSPANEL_HA_VERSIONING
+  build_flags:
+    - -D NSPANEL_HA_VERSIONING
   min_version: ${min_esphome_compiler_version}
 
 script:

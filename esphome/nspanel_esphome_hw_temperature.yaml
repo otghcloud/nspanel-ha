@@ -19,10 +19,9 @@ substitutions:
   TAG_HW_TEMPERATURE: nspanel.hw.temperature
 
 esphome:
-  platformio_options:
-    build_flags:
-      - -D NSPANEL_HA_HW_TEMPERATURE
-      - -D NSPANEL_HA_HW_TEMPERATURE_IS_FAHRENHEIT=${1 if TEMP_UNIT_IS_FAHRENHEIT else 0}
+  build_flags:
+    - -D NSPANEL_HA_HW_TEMPERATURE
+    - -D NSPANEL_HA_HW_TEMPERATURE_IS_FAHRENHEIT=${1 if TEMP_UNIT_IS_FAHRENHEIT else 0}
 
 globals:
   - id: embedded_indoor_temp  # Is embedded sensor used for indoor temperature?
@@ -49,7 +48,7 @@ number:
       then:
         - logger.log: Temperature correction changed.
         - delay: 1s
-        - lambda: temp_nspanel->publish_state(temp_nspanel->raw_state);
+        - lambda: temp_nspanel->publish_state(temp_nspanel->get_raw_state());
 
 script:
   - id: !extend action_component_val

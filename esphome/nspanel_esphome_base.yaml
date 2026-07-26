@@ -36,9 +36,8 @@ esphome:
   project:
     name: otghcloud.nspanel-ha
     version: ${version}
-  platformio_options:
-    build_flags:
-      - -D NSPANEL_HA_BASE
+  build_flags:
+    - -D NSPANEL_HA_BASE
 
 external_components:
   - source:
