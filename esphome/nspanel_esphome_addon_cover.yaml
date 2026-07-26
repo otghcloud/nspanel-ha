@@ -4,11 +4,6 @@
 ##################################################################
 ---
 substitutions:
-  ##############################
-  ## Change only in your      ##
-  ## local yaml substitutions ##
-  ##############################
-  ### Local cover defaults   ###
   cover_device_class: ""  # any of https://www.home-assistant.io/integrations/cover/#device-class
   interlock_wait_time: '250'
   TAG_ADDON_COVER: nspanel.addon.cover

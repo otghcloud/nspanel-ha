@@ -1,13 +1,7 @@
-#####################################################################################################
-##### NSPANEL ESPHOME created by Blackymas - https://github.com/otghcloud/nspanel-ha  #####
-##### ESPHOME - Page buttons                                                                    #####
-##### PLEASE only make changes if it is necessary and also the required knowledge is available. #####
-##### For normal use with the Blueprint, no changes are necessary.                              #####
-#####################################################################################################
-
-##### External references #####
-###############################
-
+##################################################################
+##### NSPanel HA  - https://github.com/otghcloud/nspanel-ha  #####
+##### ESPHome - Page - Buttons                               #####
+##################################################################
 ---
 substitutions:
   BOOT_STEP_PAGE_BUTTONS: 11

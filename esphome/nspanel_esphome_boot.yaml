@@ -2,7 +2,6 @@
 ##### NSPanel HA  - https://github.com/otghcloud/nspanel-ha  #####
 ##### ESPHome Core - Boot                                    #####
 ##################################################################
-
 ---
 substitutions:
   BOOT_STEP_BOOT: 1

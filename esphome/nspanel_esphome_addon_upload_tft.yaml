@@ -8,7 +8,7 @@ substitutions:
   nextion_update_url: "${nextion_update_base_url}/main/hmi/nspanel_blank.tft"
   upload_tft_automatically: true
   upload_tft_baud_rate: 115200
-  upload_tft_wait_ms_after_boot: 300000  # 5min
+  upload_tft_wait_ms_after_boot: 90000  # 90s
   TAG_UPLOAD_TFT: "nspanel.addon.upload_tft"
 
 esphome:
