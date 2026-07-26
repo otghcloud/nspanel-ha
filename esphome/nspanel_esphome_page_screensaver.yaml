@@ -14,7 +14,7 @@ substitutions:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_SCREENSAVER
+    - -D NSPANEL_HA_PAGE_SCREENSAVER
 
 globals:
   - id: screensaver_display_time

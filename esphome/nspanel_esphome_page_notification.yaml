@@ -80,7 +80,7 @@ display:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_NOTIFICATION
+    - -D NSPANEL_HA_PAGE_NOTIFICATION
 
 script:
   - id: !extend action_component_color

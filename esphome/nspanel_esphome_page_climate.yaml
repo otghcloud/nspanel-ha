@@ -77,7 +77,7 @@ display:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_CLIMATE
+    - -D NSPANEL_HA_PAGE_CLIMATE
 
 globals:
   - id: is_embedded_thermostat  # Is embedded thermostat set as main climate entity?

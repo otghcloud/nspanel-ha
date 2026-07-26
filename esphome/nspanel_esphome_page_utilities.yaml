@@ -78,7 +78,7 @@ display:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_UTILITIES
+    - -D NSPANEL_HA_PAGE_UTILITIES
 
 script:
   - id: !extend action_component_color

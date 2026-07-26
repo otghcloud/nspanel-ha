@@ -72,5 +72,5 @@ api:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_BUTTONS
+    - -D NSPANEL_HA_PAGE_BUTTONS
 ...

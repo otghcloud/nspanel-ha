@@ -28,7 +28,7 @@ substitutions:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_ADDON_CLIMATE_BASE
+    - -D NSPANEL_HA_ADDON_CLIMATE_BASE
 
 climate:
   - platform: thermostat

@@ -16,7 +16,7 @@ substitutions:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_DATETIME
+    - -D NSPANEL_HA_DATETIME
 
 script:
   - id: !extend action_component_text

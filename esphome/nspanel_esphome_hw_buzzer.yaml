@@ -32,7 +32,7 @@ api:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_HW_BUZZER
+    - -D NSPANEL_HA_HW_BUZZER
 
 output:
   # Buzzer output

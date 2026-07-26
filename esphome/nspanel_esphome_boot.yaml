@@ -17,7 +17,7 @@ display:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_BOOT
+    - -D NSPANEL_HA_BOOT
 
 script:
   - id: boot

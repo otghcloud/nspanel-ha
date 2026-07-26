@@ -37,7 +37,7 @@ esphome:
     name: otghcloud.nspanel-ha
     version: ${version}
   build_flags:
-      - -D NSPANEL_HA_BASE
+    - -D NSPANEL_HA_BASE
 
 external_components:
   - source:

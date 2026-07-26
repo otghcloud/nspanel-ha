@@ -28,7 +28,7 @@ display:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_BOOT
+    - -D NSPANEL_HA_PAGE_BOOT
 
 script:
   - id: !extend boot_log

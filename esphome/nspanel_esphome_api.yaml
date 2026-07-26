@@ -239,7 +239,7 @@ api:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_API
+    - -D NSPANEL_HA_API
 
 script:
   - id: action_component_color

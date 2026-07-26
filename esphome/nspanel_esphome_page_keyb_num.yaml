@@ -12,7 +12,7 @@ substitutions:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_KEYB_NUM
+    - -D NSPANEL_HA_PAGE_KEYB_NUM
 
 script:
   - id: !extend event_from_display

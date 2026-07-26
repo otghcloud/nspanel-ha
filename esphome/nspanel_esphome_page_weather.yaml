@@ -29,5 +29,5 @@ display:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_WEATHER
+    - -D NSPANEL_HA_PAGE_WEATHER
 ...

@@ -29,7 +29,7 @@ display:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_LIGHT
+    - -D NSPANEL_HA_PAGE_LIGHT
 
 script:
   - id: !extend event_from_display

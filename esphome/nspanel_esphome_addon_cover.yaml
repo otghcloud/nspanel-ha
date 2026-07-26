@@ -15,7 +15,7 @@ substitutions:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_ADDON_COVER
+    - -D NSPANEL_HA_ADDON_COVER
 
 cover:
   - id: cover_embedded

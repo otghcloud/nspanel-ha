@@ -13,7 +13,7 @@ substitutions:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_ADDON_CLIMATE_HEAT
+    - -D NSPANEL_HA_ADDON_CLIMATE_HEAT
 
 climate:
   - id: !extend thermostat_embedded

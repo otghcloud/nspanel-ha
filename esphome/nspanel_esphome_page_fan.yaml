@@ -38,7 +38,7 @@ display:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_FAN
+    - -D NSPANEL_HA_PAGE_FAN
 
 script:
   - id: !extend event_from_display

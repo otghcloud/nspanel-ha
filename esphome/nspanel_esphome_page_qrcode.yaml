@@ -67,7 +67,7 @@ display:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_QRCODE
+    - -D NSPANEL_HA_PAGE_QRCODE
 
 globals:
   - id: qrcode_icon_color

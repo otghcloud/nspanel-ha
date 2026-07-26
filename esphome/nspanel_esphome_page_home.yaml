@@ -13,7 +13,7 @@ substitutions:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_HOME
+    - -D NSPANEL_HA_PAGE_HOME
 
 globals:
   - id: is_climate

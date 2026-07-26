@@ -75,7 +75,7 @@ binary_sensor:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_HW_BUTTONS
+    - -D NSPANEL_HA_HW_BUTTONS
 
 globals:
   - id: buttons_color_on

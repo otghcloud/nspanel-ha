@@ -33,7 +33,7 @@ esp32:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_HW_MEMORY
+    - -D NSPANEL_HA_HW_MEMORY
       - -D USE_ESP32_MIN_CHIP_REVISION_SET  # Remove after implementing `minimum_chip_revision`
 
 nspanel_ha:

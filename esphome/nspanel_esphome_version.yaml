@@ -33,7 +33,7 @@ esphome:
   project:
     version: '"${version}"'
   build_flags:
-      - -D NSPANEL_HA_VERSIONING
+    - -D NSPANEL_HA_VERSIONING
   min_version: ${min_esphome_compiler_version}
 
 script:

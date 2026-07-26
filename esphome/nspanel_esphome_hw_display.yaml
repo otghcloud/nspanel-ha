@@ -79,7 +79,7 @@ display:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_HW_DISPLAY
+    - -D NSPANEL_HA_HW_DISPLAY
 
 globals:
   - id: mui_bytes_per_char

@@ -12,7 +12,7 @@ substitutions:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_CONFIRM
+    - -D NSPANEL_HA_PAGE_CONFIRM
 
 globals:
   #### Localization (MUI) ####

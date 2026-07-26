@@ -141,7 +141,7 @@ api:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_ALARM
+    - -D NSPANEL_HA_PAGE_ALARM
 
 nspanel_ha:
   require_disarm_before_rearm: ${require_disarm_before_rearm}

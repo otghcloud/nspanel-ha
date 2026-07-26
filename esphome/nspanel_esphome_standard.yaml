@@ -10,7 +10,7 @@ substitutions:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_STANDARD
+    - -D NSPANEL_HA_STANDARD
 
 packages:
   # yamllint disable rule:colons

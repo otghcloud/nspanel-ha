@@ -25,7 +25,7 @@ api:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_HW_WIFI
+    - -D NSPANEL_HA_HW_WIFI
 
 script:
   - id: !extend boot

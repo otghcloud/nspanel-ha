@@ -192,7 +192,7 @@ api:
 
 esphome:
   build_flags:
-      - -D NSPANEL_HA_PAGE_MEDIA_PLAYER
+    - -D NSPANEL_HA_PAGE_MEDIA_PLAYER
 
 script:
   - id: !extend event_from_display
