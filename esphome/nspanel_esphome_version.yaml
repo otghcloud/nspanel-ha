@@ -1,7 +1,9 @@
-##################################################################
-##### NSPanel HA  - https://github.com/otghcloud/nspanel-ha  #####
-##### ESPHome Version                                        #####
-##################################################################
+#####################################################################################################
+##### NSPANEL ESPHOME created by Blackymas - https://github.com/otghcloud/nspanel-ha  #####
+##### ESPHOME VERSION                                                                           #####
+##### PLEASE only make changes if it is necessary and also the required knowledge is available. #####
+##### For normal use with the Blueprint, no changes are necessary.                              #####
+#####################################################################################################
 ---
 substitutions:
   # Automatically updated by CI/CD on each release
@@ -39,19 +41,18 @@ script:
   - id: !extend action_component_text
     then:
       - lambda: |-
-          if (page != "mem") return;
-          if (component != "ver_blueprint") return;
-          if (txt.empty()) {
-            ESP_LOGE("${TAG_VERSIONING}", "Invalid Blueprint version: empty string");
-            return;
+          if (page == "mem") {
+            if (component == "ver_blueprint") {
+              ESP_LOGI("${TAG_VERSIONING}", "Blueprint version: %s", txt.c_str());
+              version_blueprint->publish_state(txt);
+            }
           }
-          version_blueprint->publish_state(txt);
 
   - id: !extend boot_early_routines
     then:
-      - text_sensor.template.publish:
-          id: version_esphome
-          state: ${version}
+      - delay: ${DELAY_DEFAULT}ms
+      - lambda: |-
+          version_esphome->publish_state("${version}");
 
   - id: check_versions
     mode: restart
@@ -85,43 +86,27 @@ script:
           ESP_LOGD("${TAG_VERSIONING}", "  ESPHome:   ${version}");
           ESP_LOGD("${TAG_VERSIONING}", "  TFT:       %s", version_tft->state.c_str());
           system_flags.version_check_ok = true;
-          if (!calver_gte(version_blueprint->state, "${min_blueprint_version}")) {
-            ESP_LOGW("${TAG_VERSIONING}", "Blueprint version mismatch!");
-            if (!version_blueprint->state.empty()) {
+          if (version_blueprint->state != "${version}") {
+            ESP_LOGW("${TAG_VERSIONING}", "TFT Blueprint mismatch!");
+            if (version_blueprint->state < "${min_blueprint_version}") {
+              ESP_LOGE("${TAG_VERSIONING}", "v${min_tft_version} or later is required");
               system_flags.version_check_ok = false;
-              ESP_LOGE("${TAG_VERSIONING}", "Blueprint v${min_blueprint_version} is required");
-              ESP_LOGE("${TAG_VERSIONING}", "How to Resolve This Issue:");
-              ESP_LOGE("${TAG_VERSIONING}", "1. Navigate to your Blueprint Dashboard on Home Assistant" \
-                                            "(Settings > Automations & scenes, tab 'Blueprints')");
-              ESP_LOGE("${TAG_VERSIONING}", "2. Locate the blueprint named 'NSPanel Easier Configuration'");
-              ESP_LOGE("${TAG_VERSIONING}", "3. Click on the corresponding 3-dot menu");
-              ESP_LOGE("${TAG_VERSIONING}", "4. Choose 'Re-import blueprint'");
-              ESP_LOGE("${TAG_VERSIONING}", "5. Click the 'Re-import' button");
-              ESP_LOGE("${TAG_VERSIONING}", "For more detailed instructions, please refer to the online documentation:");
-              ESP_LOGE("${TAG_VERSIONING}", "https://github.com/otghcloud/nspanel-ha/blob/main/docs/howto.md#update-blueprint");
             }
           }
-          if (!tft_ver_gte(version_tft->state, "${min_tft_version}")) {
+          if (version_tft->state != "${min_tft_version}") {
             ESP_LOGW("${TAG_VERSIONING}", "TFT version mismatch!");
-            if (!version_tft->state.empty()) {
-              ESP_LOGE("${TAG_VERSIONING}", "TFT v${min_tft_version} is required");
+            if (version_tft->state < "${min_tft_version}") {
+              ESP_LOGE("${TAG_VERSIONING}", "v${min_tft_version} or later is required");
               system_flags.version_check_ok = false;
             }
           }
 
           fire_ha_event("version", {
-            {"blueprint", version_blueprint->state.c_str() },
+            {"blueprint", version_blueprint->state.c_str()},
             {"min_blueprint_version", "${min_blueprint_version}"},
             {"esphome", "${version}"},
-            {"tft", version_tft->state.c_str() },
-            {"min_tft_version", "${min_tft_version}"},
-          #ifdef NSPANEL_HA_ADDON_UPLOAD_TFT
-            {"upload_tft_installed", "true"},
-            {"upload_tft_auto", "${upload_tft_automatically}"},
-            {"upload_tft_wait_ms", "${upload_tft_wait_ms_after_boot}"}
-          #else   // Upload TFT add-on is not installed
-            {"upload_tft_installed", "false"}
-          #endif  // NSPANEL_HA_ADDON_UPLOAD_TFT
+            {"tft", version_tft->state.c_str()},
+            {"min_tft_version", "${min_tft_version}"}
           });
           ESP_LOGD("${TAG_VERSIONING}", "Check version completed");
 
@@ -135,8 +120,8 @@ script:
             ESP_LOGCONFIG("${TAG_VERSIONING}", "  Progress: %0.1f%%", blueprint_status_flags.get_completion_percentage());
           } else {
             ESP_LOGW("${TAG_VERSIONING}", "  Progress: %0.1f%%", blueprint_status_flags.get_completion_percentage());
-            ESP_LOGW("${TAG_VERSIONING}", "  State: %s", (wifi_component->is_connected() and api_server->is_connected())
-                                                          ? "Pending" : "DISCONNECTED");
+            ESP_LOGW("${TAG_VERSIONING}", "  State: %s", (system_flags.wifi_ready and system_flags.api_ready)
+                                                    ? "Pending" : "DISCONNECTED");
           }
 
           // Report ESPHome
@@ -167,10 +152,9 @@ script:
           count: 60  # seconds
           then:
             - lambda: |-
-                ESP_LOGV("${TAG_VERSIONING}", "Blueprint version: '%s'", version_blueprint->state.c_str());
-                if (!version_blueprint->state.empty()) wait_for_version_blueprint->stop();
+                if (not version_blueprint->state.empty()) wait_for_version_blueprint->stop();
                 if (iteration % 5 == 1) boot_log->execute("Boot", "Waiting for Blueprint version");
-                if (iteration % 9 == 0) boot_request_blueprint_settings->execute("timeout");
+                if (iteration % 9) boot_request_blueprint_settings->execute("timeout");
             - delay: 1s
 
   - id: wait_for_versions
@@ -180,33 +164,29 @@ script:
       - script.wait: wait_for_version_blueprint
 
 text_sensor:
-  - id: version_esphome
-    name: "Version - ESPHome"
-    platform: template
-    entity_category: diagnostic
-    icon: mdi:tag-text-outline
-    internal: false
-    update_interval: never
-    # Published by boot_early_routines during boot sequence.
-
   - id: version_blueprint
-    name: "Version - Blueprint"
+    name: Version Blueprint
     platform: template
     entity_category: diagnostic
     icon: mdi:tag-text-outline
     internal: false
     update_interval: never
-    # Initial state is empty, which HA renders as unavailable.
-    # Published by action_component_text when the version is received from HA.
     on_value:
       then:
         - lambda: |-
-            ESP_LOGI("${TAG_VERSIONING}", "Blueprint version: %s", x.c_str());
-            blueprint_status_flags.version = (calver_gte(x, "${min_blueprint_version}"));
-            check_versions->execute(!blueprint_status_flags.version || version_tft->state.empty());
+            if (!x.empty()) blueprint_status_flags.version = true;
+            check_versions->execute(x != "${version}");
+
+  - id: version_esphome
+    name: Version ESPHome
+    platform: template
+    entity_category: diagnostic
+    icon: mdi:tag-text-outline
+    internal: false
+    update_interval: never
 
   - id: version_tft
-    name: "Version - TFT"
+    name: Version TFT
     platform: template
     entity_category: diagnostic
     icon: mdi:tag-text-outline
@@ -215,8 +195,5 @@ text_sensor:
     on_value:
       then:
         - lambda: |-
-            ESP_LOGI("${TAG_VERSIONING}", "TFT version: %s", x.c_str());
-            check_versions->execute(!blueprint_status_flags.version || x.empty());
-    # Initial state is empty, which HA renders as unavailable.
-    # Published by nspanel_esphome_page_boot when the TFT version is received from the display.
+            check_versions->execute(x != "${version}");
 ...
