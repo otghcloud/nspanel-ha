@@ -125,7 +125,7 @@ script:
 
           // Report ESPHome
           ESP_LOGCONFIG("${TAG_VERSIONING}", "ESPHome:");
-          ESP_LOGCONFIG("${TAG_VERSIONING}", "  Version: ${version}");
+          ESP_LOGCONFIG("${TAG_VERSIONING}", "  Version: %s", ESPHOME_VERSION);
           ESP_LOGCONFIG("${TAG_VERSIONING}", "  Compiler: %s", ESPHOME_VERSION);
 
           // Report framework

@@ -2,7 +2,6 @@
 ##### NSPanel HA  - https://github.com/otghcloud/nspanel-ha  #####
 ##### ESPHome - Page - Confirm                               #####
 ##################################################################
-
 ---
 substitutions:
   mui_please_confirm: "Please confirm"

@@ -34,7 +34,7 @@ esphome:
   friendly_name: ${friendly_name}
   comment: NSPanel HA
   project:
-    name: otghcloud.nspanel-ha
+    name: OTGH.NSPanel-HA
     version: ${version}
   build_flags:
     - -D NSPANEL_HA_BASE
@@ -60,7 +60,7 @@ interval:
 
 logger:
 
-nspanel_ha:  # Adds custom library for NSPanel HA Blueprint project
+nspanel_ha:  # Adds custom library for NSPanel HA project
   disable_bootloader_logs: false
 
 ota:

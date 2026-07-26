@@ -1,16 +1,9 @@
-#####################################################################################################
-##### NSPANEL ESPHOME created by Blackymas - https://github.com/otghcloud/nspanel-ha  #####
-##### ESPHOME CORE - HARDWARE - BUTTONS                                                         #####
-##### PLEASE only make changes if it is necessary and also the required knowledge is available. #####
-##### For normal use with the Blueprint, no changes are necessary.                              #####
-#####################################################################################################
-
+##################################################################
+##### NSPanel HA  - https://github.com/otghcloud/nspanel-ha  #####
+##### ESPHome Core - Hardware - Buttons                      #####
+##################################################################
 ---
 substitutions:
-  ##############################
-  ## Change only in your      ##
-  ## local yaml substitutions ##
-  ##############################
   invalid_cooldown: 100ms
   buttons_color_on: ${COLOR_CYAN_BRIGHT}
   buttons_color_off: ${COLOR_BLUE_INDIGO}

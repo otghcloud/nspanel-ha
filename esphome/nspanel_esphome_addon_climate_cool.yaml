@@ -4,11 +4,6 @@
 ##################################################################
 ---
 substitutions:
-  ##############################
-  ## Change only in your      ##
-  ## local yaml substitutions ##
-  ##############################
-  ### Local thermostat defaults ###
   temp_min: ${60 if TEMP_UNIT_IS_FAHRENHEIT else 15}
 
 esphome:
